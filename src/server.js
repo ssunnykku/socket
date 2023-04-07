@@ -17,7 +17,9 @@ const wsServer = SocketIO(httpServer);
 
 // done()을 실행하면 백엔드에서 실행되지 않음(보안상 문제), front-end의 함수를 실행시킨다
 wsServer.on("connection", (socket) => {
-  socket["nickname"] = "Anon";
+  socket.on("nickname", (nickname) => {
+    socket["nickname"] = nickname;
+  });
   // onAny : 미들웨어, 어느 이벤트에서든지 console.log를 할 수 있다.
   socket.onAny((event) => {
     console.log(`Socket Event: ${event}`);
@@ -35,9 +37,7 @@ wsServer.on("connection", (socket) => {
       socket.to(room).emit("bye", socket.nickname)
     );
   });
-  socket.on("nickname", (nickname) => {
-    socket["nickname"] = nickname;
-  });
+
   socket.on("new_message", (msg, room, done) => {
     socket.to(room).emit("new_message", `${socket.nickname}: ${msg}`);
     done();
