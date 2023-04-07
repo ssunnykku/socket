@@ -16,11 +16,31 @@ function addMessage(message) {
   ul.appendChild(li);
 }
 
+function handleMessageSubmit(event) {
+  event.preventDefault();
+  const input = room.querySelector("#msg input");
+  const value = input.value;
+  socket.emit("new_message", input.value, roomName, () => {
+    addMessage(`You: ${value}`);
+  });
+  input.value = "";
+}
+
+function handleNicknameSubmit(event) {
+  event.preventDefault();
+  const input = room.querySelector("#name input");
+  socket.emit("nickname", input.value);
+}
+
 function showRoom() {
   room.hidden = false;
   welcome.hidden = true;
   const h3 = room.querySelector("h3");
   h3.innerText = `Room ${roomName}`;
+  const msgForm = room.querySelector("#msg");
+  const nameForm = room.querySelector("#name");
+  msgForm.addEventListener("submit", handleMessageSubmit);
+  nameForm.addEventListener("submit", handleNicknameSubmit);
 }
 
 function handleRoomSubmit(event) {
@@ -28,6 +48,7 @@ function handleRoomSubmit(event) {
   const input = form.querySelector("input");
   // socket.send()로 메세지를 보내는게 아니라 "room" event로 emit해줌. 어떤 event든지 만들 수 있음(여기선 "enter_room"), object로 전송할 수 있음(ws와의 차이점)
   // socket.emit -> 서버의 socket.on과 연결
+  // emit의 인수로 함수가 가장 마지막에 나와야 함
   socket.emit("enter_room", input.value, showRoom);
   roomName = input.value;
   input.value = "";
@@ -35,6 +56,12 @@ function handleRoomSubmit(event) {
 
 form.addEventListener("submit", handleRoomSubmit);
 
-socket.on("welcome", () => {
-  addMessage("someone joined!");
+socket.on("welcome", (user) => {
+  addMessage(`${user} arrived!`);
 });
+
+socket.on("bye", (left) => {
+  addMessage(`${left} left`);
+});
+
+socket.on("new_message", addMessage);
